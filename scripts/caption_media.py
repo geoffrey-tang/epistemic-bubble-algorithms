@@ -14,10 +14,10 @@ import torch
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 DATA_DIR = Path("../data")
-DATA_FILE = "hydrated_corpus.json"
+IN_FILE = "hydrated_corpus.json"
 OUT_FILE = "hydrated_corpus_captioned.json"
 
-DATA_PATH = DATA_DIR / DATA_FILE
+IN_PATH = DATA_DIR / IN_FILE
 OUT_PATH = DATA_DIR / OUT_FILE
 
 DEFAULT_MODEL_ID = "microsoft/Florence-2-base"
@@ -64,7 +64,7 @@ class FlorenceCaption:
         )
         return parsed[prompt]
     
-    def caption_batch(self, prompt, images: List[Image.Image],  max_new_tokens: int = 96, beams: int = 1) -> List[str]:
+    def caption_batch(self, prompt, images,  max_new_tokens: int = 96, beams: int = 1) -> List[str]:
         prompts = [prompt] * len(images)
         inputs = self.processor(text=prompts, images=images, return_tensors="pt", padding=True)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
@@ -109,6 +109,35 @@ if __name__ == "__main__":
     print("loaded:", DEFAULT_MODEL_ID)
     print("transformers device:", "cuda" if torch.cuda.is_available() else "cpu")
     print("gpu:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")
-    img = pil_from_url("https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:zjhzelav6jy4gr2rhzqjqb6v/bafkreigrt2vlsunptauaploazhtk4u7eshicriikjfg7mvcyxvhbbgowna@jpeg")
-    img = downscale(img)
-    print(cap.caption_image(DEFAULT_CAPTION_TASK, img))
+    with IN_PATH.open("r") as f:
+        corpus = json.load(f)
+        data = corpus.get("data")
+    out = {}
+    img_batch = []
+    vid_batch = []
+    for i in data:
+        media = i.get("media")
+        images = media.get("images")
+        videos = media.get("videos")
+        img_flag = False
+        vid_flag = False
+        if len(img_batch) < 25:
+            img_flag = True
+            for i in images:
+                img_batch.append( downscale(pil_from_url(i.get("fullsize"))) )
+        if len(vid_batch) < 25:
+            vid_flag = True
+            for i in videos:
+                vid_batch.append( downscale(pil_from_url(i.get("thumbnail"))) )
+        if not img_flag:
+            img_caps = cap.caption_batch(DEFAULT_CAPTION_TASK, img_batch)
+            img_batch = []
+        if not vid_flag:
+            vid_caps = cap.caption_batch(DEFAULT_CAPTION_TASK, vid_batch)
+            vid_batch = []
+    if img_batch:
+        img_caps = cap.caption_batch(DEFAULT_CAPTION_TASK, img_batch)
+        img_batch = []
+    if vid_batch:
+        vid_caps = cap.caption_batch(DEFAULT_CAPTION_TASK, vid_batch)
+        vid_batch = []

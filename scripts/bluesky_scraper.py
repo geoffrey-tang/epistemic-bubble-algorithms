@@ -111,13 +111,16 @@ async def reservoir_sample(source, duration_s, k):
     return sample
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Reads in data from Bluesky's Jetstream as a reservoir sample, and collects the relevant data into ../data/corpus.json.\nCollected data needs to be hydrated with hydrate_data.py before use.")
-    parser.add_argument("duration_s", type=int, help="Duration in seconds to scrape for")
-    parser.add_argument("sample_size", type=int, help="Target number of posts to collect")
+    parser = argparse.ArgumentParser(description="Reads in data from Bluesky's Jetstream as a reservoir sample, and collects the relevant data into a file\nCollected data needs to be hydrated with hydrate_data.py before use.")
+    parser.add_argument("duration_s", type=int, help="duration in seconds to scrape for")
+    parser.add_argument("sample_size", type=int, help="target number of posts to collect")
+    parser.add_argument("--out", dest="out_path", default=str(OUT_PATH), help="output path for corpus JSON (default: ../data/corpus.json)")
+
     args = parser.parse_args()
+    out_path = Path(args.out_path)
 
     corpus = asyncio.run(reservoir_sample(JETSTREAM, args.duration_s, args.sample_size))
-    new_json = {"total": args.sample_size, "data": corpus}
-    with OUT_PATH.open("w") as f:
+    new_json = {"total": len(corpus), "data": corpus}
+    with out_path.open("w") as f:
         json.dump(new_json, f, indent = 4)
-    print(f"Data written to {OUT_PATH}")
+    print(f"Data written to {out_path}")
