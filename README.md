@@ -19,11 +19,11 @@ whenever you want to activate the virtual environment later.
 ## scripts
 This folder contains the scripts used to gather data and run experiments.
 
-**bluesky_scraper.py** gathers posts via Bluesky's Jetstream API, and takes a reservoir sample. 
+***bluesky_scraper.py*** gathers posts via Bluesky's Jetstream API, and takes a reservoir sample. 
 
-**hydrate_data.py** gathers metadata via Bluesky's public API and creates a new corpus with the hydrated metadata.
+***hydrate_data.py*** gathers metadata via Bluesky's public API and creates a new corpus with the hydrated metadata.
 
-**algorithms.py** runs an algorithm suite on a given corpus, and uses BERTopic to create visualizations of topic clusters.
+***algorithms.py*** runs an algorithm suite on a given corpus, and uses BERTopic to create visualizations of topic clusters.
 The algorithm suite contains the following:
 ```
 Chronological
