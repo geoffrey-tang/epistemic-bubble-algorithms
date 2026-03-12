@@ -27,6 +27,9 @@ OUT_PATH = DATA_DIR / OUT_FILE
 IN_PATH = DATA_DIR / IN_FILE
 
 def build_tfidf_matrix(posts, min_df=3, max_df=0.8, ngram_range=(1, 2)):
+    """
+    Builds vectorizer and matrix used for TF-IDF
+    """
     texts = [p.get("text", "") or "" for p in posts]
 
     vectorizer = TfidfVectorizer(
@@ -41,6 +44,9 @@ def build_tfidf_matrix(posts, min_df=3, max_df=0.8, ngram_range=(1, 2)):
     return vectorizer, X
 
 def compute_total_author_engagement(posts):
+    """
+    Computes and returns a dict of the total amount of engagement of each author
+    """
     totals = defaultdict(float)
 
     for p in posts:
@@ -58,6 +64,9 @@ def compute_total_author_engagement(posts):
     return totals
 
 def compute_author_priors(posts):
+    """
+    Calculates and returns a dict of scores regarding how much relevance an author has
+    """
     engagement_totals = compute_total_author_engagement(posts)
 
     priors = {}
@@ -81,16 +90,25 @@ def compute_author_priors(posts):
     return priors
 
 def attach_author_prior(posts, priors):
+    """
+    Attaches the author prior to the corresponding authors in the dataset
+    """
     for p in posts:
         did = p["author"]["did"]
         p["author_prior"] = priors.get(did, 0.0)
 
 def parse_created_at(s: str) -> datetime:
+    """
+    Parses created_at time from an ISO format to a Python friendly format
+    """
     if s.endswith("Z"):
         s = s[:-1] + "+00:00"
     return datetime.fromisoformat(s).astimezone(timezone.utc)
 
 def rank_chrono(posts, K: int):
+    """
+    Returns a list of K posts in chronological order
+    """
     ranked = sorted(
         posts,
         key=lambda p: parse_created_at(p["created_at"]),
@@ -99,6 +117,9 @@ def rank_chrono(posts, K: int):
     return ranked[:K]
 
 def rank_engagement(posts, K: int, tau_hours: float = 48.0):
+    """
+    Returns a list of K posts ranked by total engagement
+    """
     def score(p):
         likes = p.get("like_count")
         reposts = p.get("repost_count")
@@ -111,7 +132,9 @@ def rank_engagement(posts, K: int, tau_hours: float = 48.0):
     return ranked[:K]
 
 def rank_author_boost(posts, K: int, alpha: float = 1.0):
-
+    """
+    Returns a list of K posts ranked by total engagement, while artificially boosting popular authors
+    """
     def score(p):
         likes = p.get("like_count", 0) or 0
         reposts = p.get("repost_count", 0) or 0
@@ -128,6 +151,9 @@ def rank_author_boost(posts, K: int, alpha: float = 1.0):
     return ranked[:K]
 
 def rank_tfidf_profile(posts, vectorizer, X, engaged_texts, K):
+    """
+    Builds TF-IDF vectors from a seed set of posts and returns a list of the K most similar posts
+    """
     if not engaged_texts:
         return []
 
@@ -155,10 +181,16 @@ def rank_tfidf_profile(posts, vectorizer, X, engaged_texts, K):
     return results
 
 def rank_random(posts, K, seed=0):
+    """
+    Returns a random list of K posts
+    """
     random.seed(seed)
     return random.sample(posts, min(K, len(posts)))
 
 def get_text_from_json(posts):
+    """
+    Extracts post text from a json
+    """
     all_text = []
     for i in posts:
         text = i.get("text")
@@ -166,6 +198,9 @@ def get_text_from_json(posts):
     return all_text
 
 def build_topic_model() -> tuple[BERTopic, CountVectorizer, ClassTfidfTransformer]:
+    """
+    Build BERTopic model
+    """
     ctfidf_model = ClassTfidfTransformer(
         bm25_weighting=True,
         reduce_frequent_words=True
@@ -197,6 +232,9 @@ def build_topic_model() -> tuple[BERTopic, CountVectorizer, ClassTfidfTransforme
     return topic_model, vectorizer_model, ctfidf_model
 
 def run_pipeline(sentences: list[str], feed_name: str, embedder: SentenceTransformer, out_dir: Path):
+    """
+    Runs a BERTopic pipeline on a list of strings, using both TF-IDF and embeddings to organize outliers
+    """
     topic_model, vectorizer_model, ctfidf_model = build_topic_model()
 
     embeddings = embedder.encode(

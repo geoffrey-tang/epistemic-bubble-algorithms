@@ -16,3 +16,7 @@ websockets>=12.0
 einops
 timm
 hf_xet
+scikit-learn
+networkx
+bertopic
+matplotlib
