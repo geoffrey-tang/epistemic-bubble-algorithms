@@ -1,5 +1,5 @@
 # epistemic-bubble-algorithms
-An analysis of the relation between social media algorithms and epistemic bubbles using Bluesky's custom feed generators.
+An analysis of the relation between social media algorithms, and epistemic bubbles and hermeneutical injustice using Bluesky's public API.
 
 # Creating the virtual environment
 In the epistemic-bubble-algorithms directory:
